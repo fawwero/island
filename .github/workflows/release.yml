@@ -1,0 +1,58 @@
+name: Release (Windows x64)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: app/src-tauri
+      - name: npm ci (installs @tauri-apps/cli)
+        working-directory: app
+        run: npm ci
+      - name: Build NSIS + portable ZIP
+        working-directory: app
+        run: npx tauri build --target x86_64-pc-windows-msvc
+      - name: Collect artifacts
+        run: |
+          New-Item -ItemType Directory -Force -Path out | Out-Null
+          Copy-Item -Recurse app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/* out/ -ErrorAction SilentlyContinue
+          Copy-Item -Recurse app/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/zip/* out/ -ErrorAction SilentlyContinue
+      - uses: actions/upload-artifact@v4
+        with:
+          name: island-windows-x64
+          path: out/*
+
+  publish:
+    needs: build-windows
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: island-windows-x64
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          draft: true
+          generate_release_notes: true
