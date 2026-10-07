@@ -1,0 +1,20 @@
+/* глобальные стили Island: прозрачный фон оверлея, Tailwind 4 */
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* остров — скруглённая «жидкая» форма; анимации размера делает Motion (S2) */
+.island-shell {
+  border-radius: 999px;
+  background: rgba(17, 17, 20, 0.92);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
